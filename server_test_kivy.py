@@ -1,0 +1,108 @@
+import socket
+from _thread import *
+import sys
+from kivy.app import App
+from kivy.lang import Builder
+from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.label import Label
+from kivy.uix.textinput import TextInput
+from kivy.uix.popup import Popup
+from kivy.uix.spinner import Spinner
+from kivy.uix.screenmanager import Screen, ScreenManager, FadeTransition
+from kivy.uix.scrollview import ScrollView
+from kivy.uix.image import Image
+from kivy.clock import Clock
+import threading
+
+Builder.load_string("""
+
+<main_screen>:
+    BoxLayout:
+        orientation: 'vertical'
+        Label:
+            id: server_lbl
+            text: "player 1"
+        Label:
+            id: server_lbl_player_2
+            text: "player 2"
+        Button:
+            text: 'Start'
+            on_press: root.server_thread()
+
+""")
+
+class main_screen(Screen):
+
+    def server_thread(self):
+        threading.Thread(target=self.server).start()
+
+    def server(self):
+        server = "192.168.0.16"
+        port = 5555
+
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+        try:
+            s.bind((server, port))
+        except socket.error as e:
+            str(e)
+
+        s.listen(2)
+        print("Waiting for a connection, Server Started")
+        self.ids.server_lbl.text = "Waiting for a connection, Server Started"
+
+        def threaded_client(conn):
+            conn.send(str.encode("Connected"))
+            reply = ""
+            say = ""
+            while True:
+                try:
+                    data = conn.recv(2048)
+                    reply = data.decode("utf-8")
+
+                    if not data:
+                        print("Disconnected")
+                        break
+                    else:
+                        print("Received: ", reply)
+                        #self.ids.server_lbl.text = reply
+                        if reply == "2":
+                            self.ids.server_lbl_player_2.text = reply
+                            say = "I say you gay"
+                            print("Sending : ", say)
+                        if reply == "1":
+                            self.ids.server_lbl.text = reply
+                            say = "Too bad"
+                            print("Sending : ", say)
+                        if "spades" in reply:
+                            self.ids.server_lbl.text = reply
+
+                    conn.sendall(str.encode(say))
+                except:
+                    break
+
+            print("Lost connection")
+            conn.close()
+
+
+        while True:
+            conn, addr = s.accept()
+            print("Connected to:", addr)
+            start_new_thread(threaded_client, (conn,))
+
+class screen_manager(ScreenManager):
+    pass
+
+
+sm = screen_manager()
+sm.add_widget(main_screen(name='main'))
+
+
+class TestApp(App):
+    def build(self):
+        
+        return sm
+
+
+if __name__ == '__main__':
+    TestApp().run()
