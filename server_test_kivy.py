@@ -13,10 +13,18 @@ from kivy.uix.scrollview import ScrollView
 from kivy.uix.image import Image
 from kivy.clock import Clock
 import threading
+from kivy.graphics import Color, Rectangle
+from kivy.uix.behaviors import ButtonBehavior
+from kivy.clock import mainthread
 
 Builder.load_string("""
 
 <main_screen>:
+    canvas.before:
+        Rectangle:
+            size: self.size
+            pos: self.pos
+            source: 'card_board.jpg'
     BoxLayout:
         orientation: 'vertical'
         Label:
@@ -25,13 +33,25 @@ Builder.load_string("""
         Label:
             id: server_lbl_player_2
             text: "player 2"
+        BoxLayout:
+            id: player2_cards
         Button:
+            size_hint: 1,.2
+            background_color: 1,9,5,.3
             text: 'Start'
             on_press: root.server_thread()
 
 """)
 
+class card_image(Image, ButtonBehavior):
+    pass
+
 class main_screen(Screen):
+    @mainthread
+    def load_card(self,card):
+        image_path = '/home/archaeus/my_files/python_files/KivyServerGame/cards/'+card
+        card_img = card_image(source=image_path)
+        self.ids.player2_cards.add_widget(card_img)
 
     def server_thread(self):
         threading.Thread(target=self.server).start()
@@ -51,10 +71,11 @@ class main_screen(Screen):
         print("Waiting for a connection, Server Started")
         self.ids.server_lbl.text = "Waiting for a connection, Server Started"
 
+
         def threaded_client(conn):
             conn.send(str.encode("Connected"))
             reply = ""
-            say = ""
+            say = "hi"
             while True:
                 try:
                     data = conn.recv(2048)
@@ -65,16 +86,17 @@ class main_screen(Screen):
                         break
                     else:
                         print("Received: ", reply)
-                        #self.ids.server_lbl.text = reply
+                        self.ids.server_lbl_player_2.text = reply
+                        self.load_card(reply)
                         if reply == "2":
                             self.ids.server_lbl_player_2.text = reply
-                            say = "I say you gay"
+                            say = "I say you dumb"
                             print("Sending : ", say)
                         if reply == "1":
                             self.ids.server_lbl.text = reply
                             say = "Too bad"
                             print("Sending : ", say)
-                        if "spades" in reply:
+                        if "creature" in reply:
                             self.ids.server_lbl.text = reply
 
                     conn.sendall(str.encode(say))
