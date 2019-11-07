@@ -18,7 +18,10 @@ from kivy.graphics import Color, Rectangle
 from kivy.uix.behaviors import ButtonBehavior
 from kivy.clock import mainthread
 
+
 Builder.load_string("""
+
+
 
 <main_screen>:
     canvas.before:
@@ -27,6 +30,7 @@ Builder.load_string("""
             pos: self.pos
             source: 'card_board.jpg'
     BoxLayout:
+        id: main_screen_layout
         orientation: 'vertical'
         Label:
             id: server_lbl
@@ -37,10 +41,20 @@ Builder.load_string("""
         BoxLayout:
             id: player2_cards
         Button:
+            id: start_bttn
             size_hint: 1,.2
             background_color: 1,9,5,.3
             text: 'Start'
             on_press: root.server_thread()
+
+<creature_screen>:
+    canvas.before:
+        Rectangle:
+            size: self.size
+            pos: self.pos
+            source: 'card_board.jpg'
+    BoxLayout:
+        Label:
 
 """)
 
@@ -56,9 +70,10 @@ class main_screen(Screen):
 
     def server_thread(self):
         threading.Thread(target=self.server).start()
+        self.ids.main_screen_layout.remove_widget(self.ids.start_bttn)
 
     def server(self):
-        server = "192.168.0.16"
+        server = "192.168.0.19"
         port = 5555
 
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -90,7 +105,10 @@ class main_screen(Screen):
                     else:
                         print("Received: ", reply)
                         self.ids.server_lbl_player_2.text = str(reply)
-                        self.load_card(reply[0])
+                        if reply == "creature_screen":
+                            sm.current = "creature"
+                        else:
+                            self.load_card(reply[0])
                         #if reply == "2":
                             #self.ids.server_lbl_player_2.text = reply
                             #say = "I say you dumb"
@@ -115,12 +133,16 @@ class main_screen(Screen):
             print("Connected to:", addr)
             start_new_thread(threaded_client, (conn,))
 
+class creature_screen(Screen):
+    pass
+
 class screen_manager(ScreenManager):
     pass
 
 
 sm = screen_manager()
 sm.add_widget(main_screen(name='main'))
+sm.add_widget(creature_screen(name='creature'))
 
 
 class TestApp(App):
