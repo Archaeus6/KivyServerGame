@@ -58,7 +58,11 @@ Builder.load_string("""
             pos: self.pos
             source: 'card_board.jpg'
     BoxLayout:
-        id: creature_layout
+        orientation: 'vertical'
+        Label:
+            text: 'Creature Screen'
+        BoxLayout:
+            id: creature_layout
         
 
 """)
@@ -111,10 +115,13 @@ class main_screen(Screen):
                         print("Received: ", reply)
                         #self.ids.server_lbl_player_2.text = str(reply)
                         
-                        if reply == "creature_screen":
+                        if "creature" in reply[1]:
                             sm.current = "creature"
+                            send_creature = self.manager.get_screen('creature')
+                            send_creature.add_creature(reply)
                         else:
-                            self.load_card(reply[1])
+                            #self.load_card(reply[1])
+                            print('hi')
 
                         
 
@@ -132,7 +139,13 @@ class main_screen(Screen):
             start_new_thread(threaded_client, (conn,))
 
 class creature_screen(Screen):
-    pass
+
+    @mainthread
+    def add_creature(self,card):
+        image_path = '/home/archaeus/my_files/python_files/KivyServerGame/cards/'+card[1]
+        card_img = card_image(source=image_path)
+        self.ids.creature_layout.add_widget(card_img)
+            
 
 class screen_manager(ScreenManager):
     pass
