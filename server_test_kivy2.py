@@ -17,6 +17,7 @@ import threading
 from kivy.graphics import Color, Rectangle
 from kivy.uix.behaviors import ButtonBehavior
 from kivy.clock import mainthread
+from kivy.uix.progressbar import ProgressBar
 
 
 Builder.load_string("""
@@ -28,20 +29,40 @@ Builder.load_string("""
         Rectangle:
             size: self.size
             pos: self.pos
-            source: 'card_board.jpg'
+            source: 'distopian.jpeg'
     BoxLayout:
+        padding: 20
+        spacing: 20
         id: main_screen_layout
         orientation: 'vertical'
-        Label:
-            id: server_lbl
-            text: "AI"
         BoxLayout:
+            padding: 20
+            spacing: 20
+            id: AI_layout
             Label:
-                id: server_lbl_player_1
-                text: "player 1"
-            Label:
-                id: server_lbl_player_2
-                text: "player 2"
+                id: server_lbl
+                text: "AI"
+            ProgressBar:
+                id: AI_progress
+                max: 100
+                value: 0
+        BoxLayout:
+            BoxLayout:
+                orientation: 'vertical'
+                Label:
+                    id: server_lbl_player_1
+                    text: "player 1"
+                BoxLayout:
+                    size_hint: 1,.3
+                    id: player_1_icons
+            BoxLayout:
+                orientation: 'vertical'
+                Label:
+                    id: server_lbl_player_2
+                    text: "player 2"
+                BoxLayout:
+                    size_hint: 1,.3
+                    id: player_2_icons
         BoxLayout:
             id: player2_cards
         Button:
@@ -51,7 +72,7 @@ Builder.load_string("""
             text: 'Start'
             on_press: root.server_thread()
 
-<creature_screen>:
+<fight_screen>:
     canvas.before:
         Rectangle:
             size: self.size
@@ -73,9 +94,10 @@ class card_image(Image, ButtonBehavior):
 class main_screen(Screen):
     @mainthread
     def load_card(self,card):
-        image_path = '/home/archaeus/my_files/python_files/KivyServerGame/cards/'+card
-        card_img = card_image(source=image_path)
-        self.ids.player2_cards.add_widget(card_img)
+        if card == "1 factory":
+            image_path = 'production.png'
+            card_img = card_image(source=image_path)
+            self.ids.player_1_icons.add_widget(card_img)
 
     def server_thread(self):
         threading.Thread(target=self.server).start()
@@ -111,19 +133,18 @@ class main_screen(Screen):
                     if not data:
                         print("Disconnected")
                         break
+
+                    elif reply == "1 end turn":
+                        self.ids.AI_progress.value += 10
+
+                    elif reply == "1 factory":
+                        self.load_card(reply)
+                    
                     else:
                         print("Received: ", reply)
-                        #self.ids.server_lbl_player_2.text = str(reply)
+                        self.ids.server_lbl_player_2.text = str(reply)
                         
-                        if "creature" in reply[1]:
-                            sm.current = "creature"
-                            send_creature = self.manager.get_screen('creature')
-                            send_creature.add_creature(reply)
-                        else:
-                            #self.load_card(reply[1])
-                            print('hi')
-
-                        
+                                                
 
                     conn.sendall(say)
                 except:
@@ -138,13 +159,8 @@ class main_screen(Screen):
             print("Connected to:", addr)
             start_new_thread(threaded_client, (conn,))
 
-class creature_screen(Screen):
-
-    @mainthread
-    def add_creature(self,card):
-        image_path = '/home/archaeus/my_files/python_files/KivyServerGame/cards/'+card[1]
-        card_img = card_image(source=image_path)
-        self.ids.creature_layout.add_widget(card_img)
+class fight_screen(Screen):
+    pass
             
 
 class screen_manager(ScreenManager):
@@ -153,7 +169,7 @@ class screen_manager(ScreenManager):
 
 sm = screen_manager()
 sm.add_widget(main_screen(name='main'))
-sm.add_widget(creature_screen(name='creature'))
+sm.add_widget(fight_screen(name='fight'))
 
 
 class TestApp(App):
