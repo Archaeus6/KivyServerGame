@@ -1,10 +1,12 @@
 import socket
 import pickle
+import random
 from _thread import *
 import sys
 from kivy.app import App
 from kivy.lang import Builder
 from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.anchorlayout import AnchorLayout
 from kivy.uix.label import Label
 from kivy.uix.textinput import TextInput
 from kivy.uix.popup import Popup
@@ -18,6 +20,7 @@ from kivy.graphics import Color, Rectangle
 from kivy.uix.behaviors import ButtonBehavior
 from kivy.clock import mainthread
 from kivy.uix.progressbar import ProgressBar
+from kivy.uix.widget import Widget
 
 
 Builder.load_string("""
@@ -39,9 +42,14 @@ Builder.load_string("""
             padding: 20
             spacing: 20
             id: AI_layout
-            Label:
-                id: server_lbl
-                text: "AI"
+            BoxLayout:
+                canvas.before:
+                    Rectangle:                       
+                        size: self.size
+                        pos: self.pos
+                        source: 'Radar.png'
+                id: AI_radar
+                size_hint: .5,1
             ProgressBar:
                 id: AI_progress
                 max: 100
@@ -63,8 +71,7 @@ Builder.load_string("""
                 BoxLayout:
                     size_hint: 1,.3
                     id: player_2_icons
-        BoxLayout:
-            id: player2_cards
+        
         Button:
             id: start_bttn
             size_hint: 1,.2
@@ -93,6 +100,19 @@ class card_image(Image, ButtonBehavior):
 
 class main_screen(Screen):
     @mainthread
+    def load_radar(self):       
+        self.radar = Image(source = 'radar_centre_small.png')
+        #self.radar_dot = Image(pos= ,source = 'radar_dot.png')
+        self.ids.AI_radar.add_widget(self.radar)
+        with self.canvas.before:
+            self.radar_dot = Image(pos=(100,500),source = 'radar_dot_small.png')
+    @mainthread
+    def creature_radar(self):
+        randomx = random.randint(100,300)
+        randomy = random.randint(400,900)
+        self.radar_dot.pos = (randomx,randomy)
+    
+    @mainthread
     def load_card(self,card):
         if card == "1 factory":
             image_path = 'production.png'
@@ -100,6 +120,7 @@ class main_screen(Screen):
             self.ids.player_1_icons.add_widget(card_img)
 
     def server_thread(self):
+        self.load_radar()
         threading.Thread(target=self.server).start()
         self.ids.main_screen_layout.remove_widget(self.ids.start_bttn)
 
@@ -116,7 +137,7 @@ class main_screen(Screen):
 
         s.listen(2)
         print("Waiting for a connection, Server Started")
-        self.ids.server_lbl.text = "Waiting for a connection, Server Started"
+        #self.ids.server_lbl.text = "Waiting for a connection, Server Started"
 
 
         def threaded_client(conn):
@@ -136,6 +157,7 @@ class main_screen(Screen):
 
                     elif reply == "1 end turn":
                         self.ids.AI_progress.value += 10
+                        self.creature_radar()
 
                     elif reply == "1 factory":
                         self.load_card(reply)
