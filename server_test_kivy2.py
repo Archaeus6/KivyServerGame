@@ -21,6 +21,7 @@ from kivy.uix.behaviors import ButtonBehavior
 from kivy.clock import mainthread
 from kivy.uix.progressbar import ProgressBar
 from kivy.uix.widget import Widget
+from kivy.core.window import Window
 
 
 Builder.load_string("""
@@ -99,18 +100,35 @@ class card_image(Image, ButtonBehavior):
     pass
 
 class main_screen(Screen):
+    def on_touch_move(self,touch):
+        print(touch.x, touch.y, 'touch')
+    
     @mainthread
-    def load_radar(self):       
-        self.radar = Image(source = 'radar_centre_small.png')
-        #self.radar_dot = Image(pos= ,source = 'radar_dot.png')
+    def load_radar(self):
+        
+        self.radar = Image(source = 'radar_centre_small.png')       
         self.ids.AI_radar.add_widget(self.radar)
-        with self.canvas.before:
+        with self.canvas.after:
             self.radar_dot = Image(pos=(100,500),source = 'radar_dot_small.png')
+        
+        
+            
     @mainthread
     def creature_radar(self):
-        randomx = random.randint(100,300)
+        randomx = random.randint(50,300)
         randomy = random.randint(400,900)
         self.radar_dot.pos = (randomx,randomy)
+        #print(self.radar_dot.pos)
+        print(self.radar.pos)
+        x_difference = self.radar_dot.pos[0] - self.radar.pos[0]
+        y_difference = self.radar_dot.pos[1] - self.radar.pos[1]
+        #print(x_difference, y_difference)
+        if x_difference <= 120 and y_difference <=130:
+            
+            self.ids.server_lbl_player_1.text = "smash"
+            self.say = pickle.dumps('Smash')
+        else:
+            self.ids.server_lbl_player_1.text = "miss"
     
     @mainthread
     def load_card(self,card):
@@ -144,7 +162,7 @@ class main_screen(Screen):
             pickle_connected = pickle.dumps("Connected")
             conn.send(pickle_connected)
             reply = ""
-            say = pickle.dumps("hi")
+            self.say = pickle.dumps("hi")
             while True:
                 try:
                     data = conn.recv(2048)
@@ -168,7 +186,7 @@ class main_screen(Screen):
                         
                                                 
 
-                    conn.sendall(say)
+                    conn.sendall(self.say)
                 except:
                     break
 
@@ -199,6 +217,7 @@ class TestApp(App):
         
         return sm
 
+Window.fullscreen = True
 
 if __name__ == '__main__':
     TestApp().run()
