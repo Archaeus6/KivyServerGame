@@ -115,20 +115,23 @@ class main_screen(Screen):
             
     @mainthread
     def creature_radar(self):
+        global say
         randomx = random.randint(50,300)
         randomy = random.randint(400,900)
         self.radar_dot.pos = (randomx,randomy)
         #print(self.radar_dot.pos)
-        print(self.radar.pos)
         x_difference = self.radar_dot.pos[0] - self.radar.pos[0]
         y_difference = self.radar_dot.pos[1] - self.radar.pos[1]
         #print(x_difference, y_difference)
         if x_difference <= 120 and y_difference <=130:
             
             self.ids.server_lbl_player_1.text = "smash"
-            self.say = pickle.dumps('Smash')
+            say = "fight"
         else:
             self.ids.server_lbl_player_1.text = "miss"
+            say = 'no fight'
+        
+        
     
     @mainthread
     def load_card(self,card):
@@ -143,7 +146,7 @@ class main_screen(Screen):
         self.ids.main_screen_layout.remove_widget(self.ids.start_bttn)
 
     def server(self):
-        server = "192.168.0.19"
+        server = "192.168.0.16"
         port = 5555
 
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -159,10 +162,11 @@ class main_screen(Screen):
 
 
         def threaded_client(conn):
+            global say
             pickle_connected = pickle.dumps("Connected")
             conn.send(pickle_connected)
             reply = ""
-            self.say = pickle.dumps("hi")
+            say = "hi"
             while True:
                 try:
                     data = conn.recv(2048)
@@ -176,6 +180,7 @@ class main_screen(Screen):
                     elif reply == "1 end turn":
                         self.ids.AI_progress.value += 10
                         self.creature_radar()
+                        print(say)
 
                     elif reply == "1 factory":
                         self.load_card(reply)
@@ -186,7 +191,7 @@ class main_screen(Screen):
                         
                                                 
 
-                    conn.sendall(self.say)
+                    conn.sendall(pickle.dumps(say))
                 except:
                     break
 
@@ -206,7 +211,7 @@ class fight_screen(Screen):
 class screen_manager(ScreenManager):
     pass
 
-
+say = ""
 sm = screen_manager()
 sm.add_widget(main_screen(name='main'))
 sm.add_widget(fight_screen(name='fight'))
@@ -217,7 +222,7 @@ class TestApp(App):
         
         return sm
 
-Window.fullscreen = True
+#Window.fullscreen = True
 
 if __name__ == '__main__':
     TestApp().run()
