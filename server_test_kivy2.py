@@ -139,6 +139,14 @@ class main_screen(Screen):
             image_path = 'production.png'
             card_img = card_image(source=image_path)
             self.ids.player_1_icons.add_widget(card_img)
+        if card == "1 barracks":
+            image_path = 'barracks.png'
+            card_img = card_image(source=image_path)
+            self.ids.player_1_icons.add_widget(card_img)
+        if card == "1 culture":
+            image_path = 'culture.png'
+            card_img = card_image(source=image_path)
+            self.ids.player_1_icons.add_widget(card_img)
 
     def server_thread(self):
         self.load_radar()
@@ -182,8 +190,9 @@ class main_screen(Screen):
                         self.creature_radar()
                         print(say)
 
-                    elif reply == "1 factory":
+                    elif reply == "1 factory" or reply == "1 barracks" or reply == "1 culture":
                         self.load_card(reply)
+
                     
                     else:
                         print("Received: ", reply)
